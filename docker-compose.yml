@@ -1,0 +1,36 @@
+version: "3.8"
+
+services:
+  api:
+    build: .
+    container_name: cinematch_app
+    ports:
+      - "${API_PORT}:${API_PORT}"
+    depends_on:
+      - db
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - API_PORT = ${API_PORT}
+      - PYTHONPATH=/app
+    command: >
+      sh -c "
+        poetry run python scripts/create_tables.py &&
+        poetry run python scripts/seed_data.py &&
+        uvicorn app.main:app --host 0.0.0.0 --port ${API_PORT}
+      "
+
+  db:
+    image: postgres:15
+    container_name: postgres_db
+    restart: always
+    ports:
+      - "${POSTGRES_PORT}:${POSTGRES_PORT}"
+    env_file:
+      - .env
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
